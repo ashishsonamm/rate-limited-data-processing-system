@@ -9,6 +9,7 @@ import (
 	"github.com/ashishsonamm/rate-limited-data-processing-system/client/pkg/storage"
 	"github.com/ashishsonamm/rate-limited-data-processing-system/client/pkg/worker"
 	"go.uber.org/zap"
+	"runtime"
 )
 
 type TCPClientService interface {
@@ -58,7 +59,8 @@ func (impl *TCPClientServiceImpl) Start(ctx context.Context) error {
 		return err
 	}
 
-	impl.workerPoolService.Start(constants.MaxConnections)
+	numCores := runtime.NumCPU()
+	impl.workerPoolService.Start(numCores)
 
 	impl.processingService.ProcessRecords(ctx, configs)
 

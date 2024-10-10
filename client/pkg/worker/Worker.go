@@ -6,6 +6,7 @@ import (
 	"github.com/ashishsonamm/rate-limited-data-processing-system/client/pkg/bean"
 	"github.com/ashishsonamm/rate-limited-data-processing-system/client/pkg/connection"
 	"log"
+	"time"
 )
 
 type Worker struct {
@@ -43,6 +44,8 @@ func (w *Worker) Stop() {
 }
 
 func (w *Worker) processJob(record bean.Record) {
+	log.Printf("worker %d started processing record %s", w.id, record.ID)
+	time.Sleep(time.Second)
 	conn := w.connectionService.GetConnection()
 
 	if conn == nil { // no available connection
