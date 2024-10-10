@@ -1,7 +1,7 @@
 package constants
 
 const (
-	TotalRecords               int    = 5000000
+	TotalRecords               int    = 500000
 	MaxConnections             int    = 10
 	ConfigFilePath             string = "client/config.csv"
 	StartingPortForConnections int    = 49152

@@ -53,12 +53,17 @@ func (impl *ConnectionServiceImpl) EstablishConnections(count int) error {
 	return nil
 }
 
-// TODO: need to implement a proper logic
 func (impl *ConnectionServiceImpl) GetConnection() net.Conn {
 	impl.mu.Lock()
 	defer impl.mu.Unlock()
 
-	return impl.connections[0]
+	if len(impl.connections) == 0 {
+		return nil
+	}
+
+	conn := impl.connections[0]
+	impl.connections = append(impl.connections[1:], conn)
+	return conn
 }
 
 func (impl *ConnectionServiceImpl) CloseAllConnections() {
