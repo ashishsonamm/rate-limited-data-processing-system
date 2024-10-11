@@ -45,14 +45,18 @@ func (w *Worker) Stop() {
 
 func (w *Worker) processJob(record bean.Record) {
 	log.Printf("worker %d started processing record %s", w.id, record.ID)
-	time.Sleep(time.Second)
-	conn := w.connectionService.GetConnection()
+	conn, err := w.connectionService.GetConnection()
+	if err != nil {
+		return
+	}
+	defer w.connectionService.ReleaseConnection(conn)
 
 	if conn == nil { // no available connection
 		return
 	}
 
-	_, err := fmt.Fprint(conn, fmt.Sprintf("%s,%s\n", record.ID, record.Data))
+	time.Sleep(time.Second) // simulate some heavy task
+	_, err = fmt.Fprint(conn, fmt.Sprintf("%s,%s\n", record.ID, record.Data))
 	if err != nil {
 		return
 	}

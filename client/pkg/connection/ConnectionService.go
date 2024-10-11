@@ -11,21 +11,24 @@ import (
 
 type ConnectionService interface {
 	EstablishConnections(count int) error
-	GetConnection() net.Conn
+	GetConnection() (net.Conn, error)
+	ReleaseConnection(conn net.Conn)
 	CloseAllConnections()
 }
 
 type ConnectionServiceImpl struct {
-	logger      *zap.SugaredLogger
-	connections []net.Conn
-	mu          sync.Mutex
+	logger *zap.SugaredLogger
+	//connections []net.Conn
+	pool chan net.Conn
+	mu   sync.Mutex
 }
 
 func NewConnectionService(logger *zap.SugaredLogger) *ConnectionServiceImpl {
 	return &ConnectionServiceImpl{
-		logger:      logger,
-		connections: make([]net.Conn, 0),
-		mu:          sync.Mutex{},
+		logger: logger,
+		//connections: make([]net.Conn, 0),
+		pool: make(chan net.Conn, constants.MaxConnections),
+		mu:   sync.Mutex{},
 	}
 }
 
@@ -42,10 +45,15 @@ func (impl *ConnectionServiceImpl) EstablishConnections(count int) error {
 			impl.logger.Errorw("Failed to establish connection", "address", addr, "error", err)
 			continue
 		}
-		impl.connections = append(impl.connections, conn)
+		select {
+		case impl.pool <- conn:
+		default:
+			conn.Close()
+		}
+		//impl.connections = append(impl.connections, conn)
 	}
 
-	if len(impl.connections) == 0 {
+	if len(impl.pool) == 0 {
 		impl.logger.Errorw("No connnections established")
 		return errors.New("no connnections established")
 	}
@@ -53,25 +61,40 @@ func (impl *ConnectionServiceImpl) EstablishConnections(count int) error {
 	return nil
 }
 
-func (impl *ConnectionServiceImpl) GetConnection() net.Conn {
+func (impl *ConnectionServiceImpl) GetConnection() (net.Conn, error) {
+	select {
+	case conn := <-impl.pool:
+		if conn == nil {
+			return nil, errors.New("connection is nil")
+		}
+		return conn, nil
+	}
+}
+
+func (impl *ConnectionServiceImpl) ReleaseConnection(conn net.Conn) {
+	if conn == nil {
+		return
+	}
+
 	impl.mu.Lock()
 	defer impl.mu.Unlock()
 
-	if len(impl.connections) == 0 {
-		return nil
+	select {
+	case impl.pool <- conn:
+		// Connection returned to pool
+	default:
+		// Pool is full, close the connection
+		conn.Close()
 	}
-
-	conn := impl.connections[0]
-	impl.connections = append(impl.connections[1:], conn)
-	return conn
 }
 
 func (impl *ConnectionServiceImpl) CloseAllConnections() {
 	impl.mu.Lock()
 	defer impl.mu.Unlock()
 
-	for _, conn := range impl.connections {
+	close(impl.pool)
+	for conn := range impl.pool {
 		conn.Close()
 	}
-	impl.connections = nil
+	impl.pool = make(chan net.Conn, constants.MaxConnections)
 }
