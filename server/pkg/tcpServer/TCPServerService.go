@@ -27,7 +27,7 @@ type TCPServerServiceImpl struct {
 	quitChannel          chan bool
 }
 
-func NewTCPServerServiceImpl(
+func NewTCPServerService(
 	logger *zap.SugaredLogger,
 	connectionRepository connectionRepository.ConnectionRepository,
 	idGeneratorService idGenerator.IDGeneratorService,

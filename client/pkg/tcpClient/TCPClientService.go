@@ -26,7 +26,7 @@ type TCPClientServiceImpl struct {
 	processingService processing.ProcessingService
 }
 
-func NewTCPClientServiceImpl(logger *zap.SugaredLogger,
+func NewTCPClientService(logger *zap.SugaredLogger,
 	configService config.ConfigService,
 	storageService storage.StorageService,
 	connectionService connection.ConnectionService,
