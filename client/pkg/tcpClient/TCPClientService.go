@@ -58,9 +58,7 @@ func (impl *TCPClientImpl) Start(ctx context.Context) error {
 		return err
 	}
 
-	//numCores := runtime.NumCPU()
-	numWorkers := 25
-	impl.workerPoolService.Start(numWorkers)
+	impl.workerPoolService.Start(constants.NumberOfWorkers)
 
 	impl.processingService.ProcessRecords(ctx, configs)
 
