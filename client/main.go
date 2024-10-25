@@ -25,7 +25,7 @@ func main() {
 	workerPoolService := worker.NewPoolService(sugaredLogger, connectionService)
 	processingService := processing.NewProcessingService(sugaredLogger, storageService, workerPoolService)
 
-	client := tcpClient.NewTCPClientService(
+	client := tcpClient.NewTCPClient(
 		sugaredLogger,
 		configService,
 		storageService,

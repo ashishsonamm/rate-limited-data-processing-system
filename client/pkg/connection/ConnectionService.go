@@ -12,7 +12,7 @@ import (
 type ConnectionService interface {
 	EstablishConnections(count int) error
 	GetConnection() (net.Conn, error)
-	ReleaseConnection(conn net.Conn)
+	//ReleaseConnection(conn net.Conn)
 	CloseAllConnections()
 }
 
@@ -67,26 +67,27 @@ func (impl *ConnectionServiceImpl) GetConnection() (net.Conn, error) {
 		if conn == nil {
 			return nil, errors.New("connection is nil")
 		}
+		impl.pool <- conn // add this connection back to the pool channel so that it becomes available to other workers
 		return conn, nil
 	}
 }
 
-func (impl *ConnectionServiceImpl) ReleaseConnection(conn net.Conn) {
-	if conn == nil {
-		return
-	}
-
-	impl.mu.Lock()
-	defer impl.mu.Unlock()
-
-	select {
-	case impl.pool <- conn:
-		// Connection returned to pool
-	default:
-		// Pool is full, close the connection
-		conn.Close()
-	}
-}
+//func (impl *ConnectionServiceImpl) ReleaseConnection(conn net.Conn) {
+//	if conn == nil {
+//		return
+//	}
+//
+//	impl.mu.Lock()
+//	defer impl.mu.Unlock()
+//
+//	select {
+//	case impl.pool <- conn:
+//		// Connection returned to pool
+//	default:
+//		// Pool is full, close the connection
+//		conn.Close()
+//	}
+//}
 
 func (impl *ConnectionServiceImpl) CloseAllConnections() {
 	impl.mu.Lock()

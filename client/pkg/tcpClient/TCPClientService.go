@@ -9,15 +9,14 @@ import (
 	"github.com/ashishsonamm/rate-limited-data-processing-system/client/pkg/storage"
 	"github.com/ashishsonamm/rate-limited-data-processing-system/client/pkg/worker"
 	"go.uber.org/zap"
-	"runtime"
 )
 
-type TCPClientService interface {
+type TCPClient interface {
 	Start(ctx context.Context) error
 	Stop()
 }
 
-type TCPClientServiceImpl struct {
+type TCPClientImpl struct {
 	logger            *zap.SugaredLogger
 	configService     config.ConfigService
 	storageService    storage.StorageService
@@ -26,13 +25,13 @@ type TCPClientServiceImpl struct {
 	processingService processing.ProcessingService
 }
 
-func NewTCPClientService(logger *zap.SugaredLogger,
+func NewTCPClient(logger *zap.SugaredLogger,
 	configService config.ConfigService,
 	storageService storage.StorageService,
 	connectionService connection.ConnectionService,
 	workerPoolService worker.PoolService,
-	processingService processing.ProcessingService) *TCPClientServiceImpl {
-	return &TCPClientServiceImpl{
+	processingService processing.ProcessingService) *TCPClientImpl {
+	return &TCPClientImpl{
 		logger:            logger,
 		configService:     configService,
 		storageService:    storageService,
@@ -42,7 +41,7 @@ func NewTCPClientService(logger *zap.SugaredLogger,
 	}
 }
 
-func (impl *TCPClientServiceImpl) Start(ctx context.Context) error {
+func (impl *TCPClientImpl) Start(ctx context.Context) error {
 	impl.logger.Info("starting TCP client")
 
 	configs, err := impl.configService.LoadConfig(constants.ConfigFilePath)
@@ -59,15 +58,16 @@ func (impl *TCPClientServiceImpl) Start(ctx context.Context) error {
 		return err
 	}
 
-	numCores := runtime.NumCPU()
-	impl.workerPoolService.Start(numCores)
+	//numCores := runtime.NumCPU()
+	numWorkers := 25
+	impl.workerPoolService.Start(numWorkers)
 
 	impl.processingService.ProcessRecords(ctx, configs)
 
 	return nil
 }
 
-func (impl *TCPClientServiceImpl) Stop() {
+func (impl *TCPClientImpl) Stop() {
 	impl.logger.Info("stopping TCP client")
 	impl.workerPoolService.Stop()
 	impl.connectionService.CloseAllConnections()

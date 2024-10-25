@@ -20,7 +20,7 @@ func main() {
 	connectionRepo := connectionRepository.NewConnectionRepository()
 	idGeneratorService := idGenerator.NewIDGeneratorService()
 
-	server := tcpServer.NewTCPServerService(sugaredLogger, connectionRepo, idGeneratorService)
+	server := tcpServer.NewTCPServer(sugaredLogger, connectionRepo, idGeneratorService)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

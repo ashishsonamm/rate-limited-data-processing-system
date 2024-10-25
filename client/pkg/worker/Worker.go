@@ -49,7 +49,7 @@ func (w *Worker) processJob(record bean.Record) {
 	if err != nil {
 		return
 	}
-	defer w.connectionService.ReleaseConnection(conn)
+	//defer w.connectionService.ReleaseConnection(conn)
 
 	if conn == nil { // no available connection
 		return

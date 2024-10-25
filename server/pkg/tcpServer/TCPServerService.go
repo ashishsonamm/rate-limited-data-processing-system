@@ -12,13 +12,13 @@ import (
 	"sync"
 )
 
-type TCPServerService interface {
+type TCPServer interface {
 	StartServers(ctx context.Context, startingPort int, numServers int) error
 	StopServers()
 	HandleConnection(conn net.Conn)
 }
 
-type TCPServerServiceImpl struct {
+type TCPServerImpl struct {
 	logger               *zap.SugaredLogger
 	connectionRepository connectionRepository.ConnectionRepository
 	idGeneratorService   idGenerator.IDGeneratorService
@@ -27,12 +27,12 @@ type TCPServerServiceImpl struct {
 	quitChannel          chan bool
 }
 
-func NewTCPServerService(
+func NewTCPServer(
 	logger *zap.SugaredLogger,
 	connectionRepository connectionRepository.ConnectionRepository,
 	idGeneratorService idGenerator.IDGeneratorService,
-) *TCPServerServiceImpl {
-	return &TCPServerServiceImpl{
+) *TCPServerImpl {
+	return &TCPServerImpl{
 		logger:               logger,
 		connectionRepository: connectionRepository,
 		idGeneratorService:   idGeneratorService,
@@ -41,7 +41,7 @@ func NewTCPServerService(
 	}
 }
 
-func (impl *TCPServerServiceImpl) StartServers(ctx context.Context, startingPort int, numServers int) error {
+func (impl *TCPServerImpl) StartServers(ctx context.Context, startingPort int, numServers int) error {
 	for i := 0; i < numServers; i++ {
 		port := startingPort + i
 		impl.logger.Infow("starting TCP server", "port", port)
@@ -63,7 +63,7 @@ func (impl *TCPServerServiceImpl) StartServers(ctx context.Context, startingPort
 	return nil
 }
 
-func (impl *TCPServerServiceImpl) acceptConnections(ctx context.Context, listener net.Listener) {
+func (impl *TCPServerImpl) acceptConnections(ctx context.Context, listener net.Listener) {
 	defer impl.acceptWg.Done()
 
 	for {
@@ -85,7 +85,7 @@ func (impl *TCPServerServiceImpl) acceptConnections(ctx context.Context, listene
 	}
 }
 
-func (impl *TCPServerServiceImpl) StopServers() {
+func (impl *TCPServerImpl) StopServers() {
 	impl.logger.Info("stopping TCP server")
 	close(impl.quitChannel)
 	for _, listener := range impl.listeners {
@@ -96,7 +96,7 @@ func (impl *TCPServerServiceImpl) StopServers() {
 	impl.acceptWg.Wait()
 }
 
-func (impl *TCPServerServiceImpl) HandleConnection(conn net.Conn) {
+func (impl *TCPServerImpl) HandleConnection(conn net.Conn) {
 	defer conn.Close()
 	defer impl.connectionRepository.RemoveConnection(conn)
 
